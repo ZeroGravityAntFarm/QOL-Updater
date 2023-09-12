@@ -5,9 +5,17 @@ from PIL import ImageTk
 import os
 import GPUtil
 import json
+import subprocess
+import signal
+import threading
+import time
+import pyi_splash
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+
+vulkan_data = []
 
 
 def check_gpu_support():
@@ -31,6 +39,42 @@ def check_gpu_support():
             systemInfo["vulkanSupported"] = False
 
     return systemInfo
+
+
+def get_vulkan_thread():
+    vThread = threading.Thread(target=get_vulkan_version)
+    vThread.start()
+
+
+def get_vulkan_version():
+    global vulkan_data
+    
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = subprocess.SW_HIDE
+    
+    vulkanInfo = subprocess.Popen(["assets\\vulkaninfo.exe"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+    stdout, stderr = vulkanInfo.communicate()
+
+    '''
+    if stderr:
+        
+        vulkan_data.append(stderr)
+        vulkanInfo.kill()
+        vulkanInfo.wait()
+
+        return
+    '''
+    
+    for line in stdout.splitlines():
+        if "Vulkan Instance Version:" in str(line):
+            vulkan_data.append(line)
+            break
+    
+    vulkanInfo.kill()
+    vulkanInfo.wait()
+
+    return
 
 
 class App(customtkinter.CTk):
@@ -60,10 +104,10 @@ class App(customtkinter.CTk):
         self.sidebar_button_3.grid(row=3, column=0, padx=20, pady=10)
 
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
+        self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 0))
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"],
                                                                        command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 10))
+        self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
 
 
         '''
@@ -144,7 +188,7 @@ class App(customtkinter.CTk):
         '''
 
         # set default values
-        self.sidebar_button_1.configure(state="disabled", text="Check For Updates")
+        self.sidebar_button_1.configure(text="Apply Updates")
         self.sidebar_button_2.configure(text="Verify Files")
         self.sidebar_button_3.configure(text="Revert Changes")
         #self.checkbox_3.configure(state="disabled")
@@ -162,6 +206,11 @@ class App(customtkinter.CTk):
 
         for key, value in gpu_support.items():
             self.textbox.insert("0.0", key + ": " + str(value) + "\n")
+
+        get_vulkan_version()
+        time.sleep(2)
+
+        self.textbox.insert("0.0", "Vulkan version: " + str(vulkan_data) + "\n")
         #self.seg_button_1.configure(values=["CTkSegmentedButton", "Value 2", "Value 3"])
         #self.seg_button_1.set("Value 2")
 
@@ -181,6 +230,7 @@ if __name__ == "__main__":
     app.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","icon.png"))
     app.wm_iconbitmap()
     app.iconphoto(False, app.iconpath)
+    pyi_splash.close()
     app.mainloop()
 
     

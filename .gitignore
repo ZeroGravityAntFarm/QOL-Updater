@@ -21,3 +21,9 @@ build/updater/EXE-00.toc
 build/updater/base_library.zip
 dist/assets/icon.png
 dist/assets/supported-cards.json
+build/updater/Splash-00.res
+build/updater/Splash-00.toc
+build/updater/Splash-00_script.tcl
+build/updater/Tree-03.toc
+build/updater/Tree-04.toc
+build/updater/Tree-05.toc
