@@ -6,6 +6,7 @@ import json
 import subprocess
 import time
 import pyi_splash
+import webbrowser
 
 from tkinter import filedialog
 from pathlib import Path
@@ -97,7 +98,7 @@ class App(customtkinter.CTk):
         self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.sidebar_button_event)
         self.sidebar_button_3.grid(row=3, column=0, padx=20, pady=10)
 
-        self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, command=self.sidebar_button_event)
+        self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_discord)
         self.sidebar_button_4.grid(row=7, column=0, padx=20, pady=10)
 
         #Configure Sidbar Buttons
@@ -205,11 +206,16 @@ class App(customtkinter.CTk):
             time.sleep(2)
             self.log("Vulkan version: " + str(vulkan_data), self.textbox)
 
+        elif not file_path:
+            pass
+
         else:
-            self.textbox.insert(customtkinter.END, "Doesn't seem to be a valid ED directory...")
-            self.log("Doesn't seem to be a valid ED directory...", self.textbox)
+            self.log("Invalid Game Directory", self.textbox)
 
         return file_path
+
+    def open_discord(self):
+        webbrowser.open("https://discord.gg/ag6s9BnJ", new=1)
 
     #Log to our textbox
     def log(self, message, textbox):
