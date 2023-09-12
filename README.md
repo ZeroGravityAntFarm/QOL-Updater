@@ -9,7 +9,7 @@ Requirements: \
 python 3.11.5 \
 pyinstaller 5.13.2 \
 customtkinter 5.2.0 \
-PIL 10.0.0 
+PIL 10.0.0 \
 gputil 1.4.0
 
 ```

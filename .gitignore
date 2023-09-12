@@ -27,3 +27,6 @@ build/updater/Splash-00_script.tcl
 build/updater/Tree-03.toc
 build/updater/Tree-04.toc
 build/updater/Tree-05.toc
+dist/assets/vulkaninfo.exe
+dist/assets/updater.PNG
+dist/assets/slayer.png
