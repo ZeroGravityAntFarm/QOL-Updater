@@ -1,0 +1,41 @@
+{
+    "ruleset": [{
+            "task": "Move dewriton.json",
+            "enabled": true,
+            "type": "copy",
+            "backup": true,
+            "src": "assets/files/dewrito.json",
+            "dest": "mods/dewrito.json"
+        },
+        {
+            "task": "Update FMM",
+            "enabled": true,
+            "type": "copy",
+            "backup": true,
+            "src": "assets/files/fmm.exe",
+            "dest": "/"
+        },
+        {
+            "task": "Apply CEF/UI Fixes",
+            "enabled": true,
+            "type": "copy",
+            "backup": true,
+            "src": "assets/files/mods/ui/web/screens",
+            "dest": "mods/ui/web/screens"
+        },
+        {
+            "task": "Download Eldewrito Scheme Handler",
+            "enabled": false,
+            "type": "download",
+            "url": "https://api.github.com/repos/pauwlo/ElDewrito-Scheme-Handler/releases",
+            "dest": "assets/files/",
+            "unzip": true
+        }
+    ],
+    "config": {
+        "update_endpoint": "https://api.github.com/repos/ZeroGravityAntFarm/QOL-Updater/releases",
+        "checkForUpdates": true,
+        "temp": "/qol_folder",
+        "version": "0.0.4"
+    }
+}

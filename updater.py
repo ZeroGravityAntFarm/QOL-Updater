@@ -1,17 +1,20 @@
 import customtkinter
-from PIL import ImageTk
 import os
 import GPUtil
 import json
 import subprocess
 import time
-import pyi_splash
+#import pyi_splash
 import webbrowser
 import hashlib
 import shutil
+import requests
+import zipfile
 
 from tkinter import filedialog
 from pathlib import Path
+from PIL import ImageTk
+from packaging import version
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -44,6 +47,7 @@ def check_gpu_support():
     return systemInfo
 
 
+#sha1 hash
 def sha1_check(file_path):
     try:
         hash = hashlib.sha1(open(file_path,'rb').read()).hexdigest()
@@ -106,7 +110,7 @@ class App(customtkinter.CTk):
         self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.verify_files)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
 
-        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.sidebar_button_event)
+        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame)
         self.sidebar_button_3.grid(row=3, column=0, padx=20, pady=10)
 
         self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_discord)
@@ -186,16 +190,71 @@ class App(customtkinter.CTk):
         self.checkbox_Scheme_1.select()
 
 
-    #Functions for button events
-    def open_input_dialog_event(self):
-        dialog = customtkinter.CTkInputDialog(text="Type in a number:", title="CTkInputDialog")
-        print("CTkInputDialog:", dialog.get_input())
-
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
 
-    def sidebar_button_event(self):
-        print("sidebar_button click")
+    #Get config file
+    def get_config(self):
+        #self.log("Loading Config...", self.textbox)
+        try:
+            with open("assets/config.json") as config:
+                qolConfig = json.load(config)
+                return qolConfig
+
+        except Exception as e:
+            self.log("Could not find config assets/config.json", self.textbox)
+            self.log(e, self.textbox)
+
+
+    #Pull latest release from github and restart
+    def self_update(self):
+        qolConfig = self.get_config()
+        gitApi = qolConfig["config"]["update_endpoint"]
+
+        try:
+            response = requests.get(gitApi)
+            githubReleases = response.json()
+        
+        except:
+            self.log(f"Could not access {qolConfig['config']['update_endpoint']}", self.textbox)
+            return
+
+
+        if version.parse(githubReleases[0]["tag_name"]) > version.parse(qolConfig["config"]["version"]):
+            self.log(f"New Version Found!", self.textbox)
+
+            try:
+                self.log(f"Downloading {githubReleases[0]['zipball_url']}", self.textbox)
+                response = requests.get(githubReleases[0]["zipball_url"], stream=True)
+
+            except:
+                self.log(f"Failed to dowload from {githubReleases[0]['zipball_url']}", self.textbox)
+                return
+
+            #Write new updater to assets folder
+            with open("dist/update.zip", "wb") as f:
+                f.write(response.content)
+
+                with zipfile.ZipFile("dist/update.zip", 'r') as zip_ref:
+                    zip_ref.extractall(os.getcwd())
+
+
+                #subprocess.Popen(["assets\\update.exe"])
+                exit()
+        
+        else:
+            self.log(f"No Updates Found", self.textbox)
+            return
+    
+
+    #This should be our entry point
+    def startup_Tasks(self):
+        qolConfig = self.get_config()
+
+        if qolConfig["config"]["checkForUpdates"]:
+            self.log("Checking for updates...", self.textbox)
+            self.self_update()
+
 
     #Grab and validate game directory
     def open_ed_directory(self):
@@ -224,37 +283,6 @@ class App(customtkinter.CTk):
         else:
             self.log("Invalid Game Directory", self.textbox)
 
-        self.create_backup(file_path)
-
-        return
-
-
-    def create_backup(self, gamePath):
-        self.log("", self.textbox)
-        self.log("Backing up game files...", self.textbox)
-        temp = "/qol_temp"
-
-        if not os.path.exists(gamePath + temp):
-            self.log("Creating temp folder...", self.textbox)
-            os.mkdir(gamePath + temp)
-
-        self.log("Backing up mods/dewrito.json", self.textbox)
-        shutil.copy(gamePath + "/mods/dewrito.json", gamePath + temp + "/dewrito.json")
-
-        self.log("Backing up mods/ui/web/screens", self.textbox)
-        shutil.copytree(gamePath + "/mods/ui/web/screens", gamePath + temp + "/mods/ui/web/screens")
-
-        self.log("Backing up binkw32.dll", self.textbox)
-        shutil.copy(gamePath + "/binkw32.dll", gamePath + temp + "/binkw32.dll")
-
-
-        #Create if not exists, then backup to qol_temp
-        #Backup mods/dewrito.json
-        #Backup mods/ui/web/screens
-        #If exists, Backup FMM.exe
-        #Backup binkw32.dll
-        #If exists, Backup d3d9.dll
-        #If exists, Backup autoexec.cfg
         return
 
 
@@ -306,7 +334,8 @@ if __name__ == "__main__":
     app.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","icon.png"))
     app.wm_iconbitmap()
     app.iconphoto(False, app.iconpath)
-    pyi_splash.close()
+    #pyi_splash.close()
+    app.after_idle(app.startup_Tasks)
     app.mainloop()
 
     
