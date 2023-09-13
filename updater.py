@@ -7,6 +7,8 @@ import subprocess
 import time
 import pyi_splash
 import webbrowser
+import hashlib
+import shutil
 
 from tkinter import filedialog
 from pathlib import Path
@@ -40,6 +42,15 @@ def check_gpu_support():
             systemInfo["vulkanSupported"] = False
 
     return systemInfo
+
+
+def sha1_check(file_path):
+    try:
+        hash = hashlib.sha1(open(file_path,'rb').read()).hexdigest()
+        return hash
+    
+    except:
+        return f"{file_path} Not Found"
 
 
 #Get vulkan version on local machine
@@ -92,7 +103,7 @@ class App(customtkinter.CTk):
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_ed_directory)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
 
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.sidebar_button_event)
+        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.verify_files)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
 
         self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.sidebar_button_event)
@@ -192,7 +203,8 @@ class App(customtkinter.CTk):
         ed_path = Path(file_path + "/eldorado.exe")
 
         if ed_path.is_file():
-            self.log("Eldorado found!", self.textbox)
+            self.log("", self.textbox)
+            self.log("Eldorado Found!", self.textbox)
 
             #Get GPU and Vulkan support information
             gpu_support = check_gpu_support()
@@ -212,10 +224,74 @@ class App(customtkinter.CTk):
         else:
             self.log("Invalid Game Directory", self.textbox)
 
-        return file_path
+        self.create_backup(file_path)
+
+        return
+
+
+    def create_backup(self, gamePath):
+        self.log("", self.textbox)
+        self.log("Backing up game files...", self.textbox)
+        temp = "/qol_temp"
+
+        if not os.path.exists(gamePath + temp):
+            self.log("Creating temp folder...", self.textbox)
+            os.mkdir(gamePath + temp)
+
+        self.log("Backing up mods/dewrito.json", self.textbox)
+        shutil.copy(gamePath + "/mods/dewrito.json", gamePath + temp + "/dewrito.json")
+
+        self.log("Backing up mods/ui/web/screens", self.textbox)
+        shutil.copytree(gamePath + "/mods/ui/web/screens", gamePath + temp + "/mods/ui/web/screens")
+
+        self.log("Backing up binkw32.dll", self.textbox)
+        shutil.copy(gamePath + "/binkw32.dll", gamePath + temp + "/binkw32.dll")
+
+
+        #Create if not exists, then backup to qol_temp
+        #Backup mods/dewrito.json
+        #Backup mods/ui/web/screens
+        #If exists, Backup FMM.exe
+        #Backup binkw32.dll
+        #If exists, Backup d3d9.dll
+        #If exists, Backup autoexec.cfg
+        return
+
 
     def open_discord(self):
         webbrowser.open("https://discord.gg/ag6s9BnJ", new=1)
+
+
+    def verify_files(self):
+        #What do we want to verify?
+        #Everything in dewrito.json?
+        #Updater files?
+        file_path = filedialog.askdirectory()
+        ed_path = Path(file_path + "/eldorado.exe")
+
+        if ed_path.is_file():
+            self.log("", self.textbox)
+            self.log("Verifying Game Files...", self.textbox)
+        
+        else:
+            self.log("", self.textbox)
+            self.log("Invalid Game Directory", self.textbox)
+
+        with open(file_path + "/mods/dewrito.json") as dewritoJson:
+            dewritoJson = json.load(dewritoJson)
+
+            for fileName, filesha1 in dewritoJson["gameFiles"].items():
+                if "bink\\" in fileName:
+                    continue
+
+                file_sum = sha1_check(file_path + "/" + fileName)
+
+                if file_sum == filesha1:
+                    self.log(fileName + " CLEAN", self.textbox)
+                    
+                else:
+                    self.log(fileName + " DIRTY", self.textbox)
+
 
     #Log to our textbox
     def log(self, message, textbox):
@@ -225,7 +301,6 @@ class App(customtkinter.CTk):
         self.textbox.see(customtkinter.END)
 
         
-
 if __name__ == "__main__":
     app = App()
     app.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","icon.png"))
