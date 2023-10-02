@@ -6,8 +6,8 @@ Small wizard to help advise and apply QOL patches for ElDewrito.
 ### Build:
 
 Requirements: \
-python 3.11.5 (Compiled bootloader) \
-pyinstaller 5.13.2 \
+python 3.11.5 \
+pyinstaller 6.0.0 (Compiled bootloader) \
 customtkinter 5.2.0 \
 PIL 10.0.0 \
 gputil 1.4.0
