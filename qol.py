@@ -180,7 +180,11 @@ def copy_binkw32(fpath):
 
 def copy_chat(fpath):
     try:
-        shutil.copytree("assets/mods", fpath + "/mods")
+        shutil.copyfile("assets/mods/ui/web/screens/scoreboard/scoreboard.js", fpath + "/mods/ui/web/screens/scoreboard/scoreboard.js")
+        shutil.copyfile("assets/mods/ui/web/screens/chat/chat.js", fpath + "/mods/ui/web/screens/chat/chat.js")
+        shutil.copyfile("assets/mods/ui/web/screens/chat/chat.css", fpath + "/mods/ui/web/screens/chat/chat.css")
+        shutil.copyfile("assets/mods/ui/web/screens/chat/index.html", fpath + "/mods/ui/web/screens/chat/index.html")
+
         return True
     
     except Exception as e:
