@@ -31,3 +31,7 @@ dist/assets/vulkaninfo.exe
 dist/assets/updater.PNG
 dist/assets/slayer.png
 assets/eldorito.png
+build/
+dist/
+qol.spec
+dewrito_prefs.cfg
