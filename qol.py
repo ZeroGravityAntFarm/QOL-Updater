@@ -434,8 +434,12 @@ class App(customtkinter.CTk):
 
             #Give vulkaninfo enough time to run and 
             time.sleep(3)
-            self.log("Vulkan version: " + str(vulkan_Data), self.textbox)
-
+            if 'ERROR' in str(vulkan_Data):
+                vulkan_Data = '0.0.0'
+            
+            else:
+                self.log("Vulkan Version: " + str(vulkan_Data), self.textbox)
+ 
             if version.parse(vulkan_Data) > version.parse("1.3.0"):
                 self.log("Vulkan Standard Supported!", self.textbox)
                 if self.checkbox_DXVK_1.get():
