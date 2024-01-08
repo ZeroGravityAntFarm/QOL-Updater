@@ -205,8 +205,12 @@ def copy_fmm(fpath):
 
 def copy_Update(fpath):
     try:
-        shutil.copytree("assets/update", fpath + "/maps/update")
-        return True
+        if not os.path.isdir(fpath + "/maps/update"):
+            shutil.copytree("assets/update", fpath + "/maps/update")
+            return True
+        
+        else:
+            return True
     
     except Exception as e:
         print(e)
@@ -540,6 +544,9 @@ class App(customtkinter.CTk):
                     app.update()
 
                     self.log("Starting shader gen, go grab a coffee...", self.textbox)
+                    self.log("!!! DO NOT CLOSE THE UPDATER !!!", self.textbox)
+                    self.log("!!! DO NOT CLOSE THE UPDATER !!!", self.textbox)
+                    self.log("!!! DO NOT CLOSE THE UPDATER !!!", self.textbox)
                     app.update()
 
                     if gen_ShaderCache(file_path):
@@ -551,7 +558,7 @@ class App(customtkinter.CTk):
                         app.update()
 
                 else:
-                    self.log("Failed to generate shader cache.", self.textbox)
+                    self.log("Failed to copy shader files.", self.textbox)
 
 
         elif not file_path:
