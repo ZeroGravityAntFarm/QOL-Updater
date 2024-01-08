@@ -4,7 +4,7 @@ import GPUtil
 import json
 import subprocess
 import time
-import pyi_splash
+#import pyi_splash
 import webbrowser
 import hashlib
 import shutil
@@ -56,6 +56,23 @@ def sha1_check(file_path):
     except:
         return f"{file_path} Not Found"
 
+
+#Generate shader cache
+def gen_ShaderCache(fpath):
+
+    try:
+        shaderGen = subprocess.Popen([fpath + "/maps/update/UPDATE.bat"], cwd=fpath + '/maps/update/' ,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = shaderGen.communicate()
+
+        if stderr:
+            print(stderr)
+        
+        shaderGen.wait()
+
+    except Exception as e:
+        return False
+
+    return True
 
 
 #Get vulkan version on local machine
@@ -137,30 +154,13 @@ def update_rems(fpath):
 
 
 def update_stats(fpath):
-    with open(fpath + "/mods/dewrito.json", "r") as statdata:
-        data = json.load(statdata)
-
-        urls = [
-                "http://ed.thebeerkeg.net/server/submit",
-                "http://thebeerkeg.net/submit.php",
-                "http://new.halostats.click/api/submit",
-                "http://stat-endpoint.zgaf.io/api_v1/stats"
-            ]
-        
-        data["stats"]["submitUrls"] = urls
-
-    with open(fpath + "/mods/dewrito.json", "w") as statdata:
-        json.dump(data, statdata, ensure_ascii=True)
-
-    return True
-
-
-
-def copy_d3d9(fpath):
     try:
-        shutil.copyfile("assets/d3d9.dll", fpath + "/d3d9.dll")
-        return True
+        if os.path.exists(fpath + "/mods/dewrito.json"):
+            os.remove(fpath + "/mods/dewrito.json")
 
+        shutil.copyfile("assets/dewrito.json", fpath + "/mods/dewrito.json")
+        return True
+    
     except Exception as e:
         print(e)
         return False
@@ -196,6 +196,16 @@ def copy_chat(fpath):
 def copy_fmm(fpath):
     try:
         shutil.copyfile("assets/fmm.exe", fpath + "/fmm.exe")
+        return True
+    
+    except Exception as e:
+        print(e)
+        return False
+
+
+def copy_Update(fpath):
+    try:
+        shutil.copytree("assets/update", fpath + "/maps/update")
         return True
     
     except Exception as e:
@@ -257,8 +267,8 @@ class App(customtkinter.CTk):
         #self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.verify_files)
         #self.sidebar_button_2.grid(row=1, column=0, padx=20, pady=10)
 
-        #self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame)
-        #self.sidebar_button_3.grid(row=2, column=0, padx=20, pady=10)
+        self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_guide)
+        self.sidebar_button_3.grid(row=5, column=0, padx=20, pady=10)
 
         self.sidebar_button_4 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_fileshare)
         self.sidebar_button_4.grid(row=6, column=0, padx=20, pady=10)
@@ -269,7 +279,7 @@ class App(customtkinter.CTk):
         #Configure Sidbar Buttons
         self.sidebar_button_1.configure(text="Apply Updates")
         #self.sidebar_button_2.configure(text="Verify Files")
-        #self.sidebar_button_3.configure(text="Revert Changes")
+        self.sidebar_button_3.configure(text="ElDewrito Guide")
         self.sidebar_button_4.configure(text="Fileshare")
         self.sidebar_button_5.configure(text="Discord")
 
@@ -282,16 +292,16 @@ class App(customtkinter.CTk):
         self.textbox.grid(row=1, column=1, columnspan=2, rowspan=4, padx=(20, 20), pady=(5, 20), sticky="nsew")
 
         self.tabview.add("DXVK")
-        self.tabview.add("CEF")
-        self.tabview.add("Stats")
+        self.tabview.add("Game Chat")
+        self.tabview.add("dewrito.json")
         self.tabview.add("FMM")
         self.tabview.add("Crash Fixes")
         self.tabview._segmented_button.grid(sticky="w")
 
         #Configure grid of individual tabs
         self.tabview.tab("DXVK").grid_columnconfigure(4, weight=1)
-        self.tabview.tab("CEF").grid_columnconfigure(4, weight=1)
-        self.tabview.tab("Stats").grid_columnconfigure(4, weight=1)
+        self.tabview.tab("Game Chat").grid_columnconfigure(4, weight=1)
+        self.tabview.tab("dewrito.json").grid_columnconfigure(4, weight=1)
         self.tabview.tab("FMM").grid_columnconfigure(4, weight=1)
         self.tabview.tab("Crash Fixes").grid_columnconfigure(4, weight=1)
 
@@ -299,30 +309,35 @@ class App(customtkinter.CTk):
         #DXVK Checkbox
         self.checkbox_DXVK_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
         self.checkbox_DXVK_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_DXVK_1.configure(text="DXVK")
+        self.checkbox_DXVK_1.configure(text="DXVK (If Supported)")
         self.checkbox_DXVK_1.select()
 
+        self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
+        self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
+        self.checkbox_DXVK_2.configure(text="Generate Shaders (Temporarily CPU Intensive!)")
+        #self.checkbox_DXVK_2.select()
+
         # CEF Checkbox
-        self.checkbox_CEF_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("CEF"))
+        self.checkbox_CEF_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Game Chat"))
         self.checkbox_CEF_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="n")
-        self.checkbox_CEF_1.configure(text="Fix Chat Lag")
+        self.checkbox_CEF_1.configure(text="Chat Filter And Fix Chat Lag")
         self.checkbox_CEF_1.select()
 
         # Stats Checkbox
-        self.checkbox_STATS_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Stats"))
+        self.checkbox_STATS_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("dewrito.json"))
         self.checkbox_STATS_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_STATS_1.configure(text="Update Stat Servers")
+        self.checkbox_STATS_1.configure(text="Update 'dewrito.json' And Add Server Browser")
         self.checkbox_STATS_1.select()
 
-        self.checkbox_STATS_3 = customtkinter.CTkCheckBox(master=self.tabview.tab("Stats"))
-        self.checkbox_STATS_3.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_STATS_3.configure(text="Add Active Master Servers")
-        self.checkbox_STATS_3.select()
+        #self.checkbox_STATS_3 = customtkinter.CTkCheckBox(master=self.tabview.tab("Stats"))
+        #self.checkbox_STATS_3.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
+        #self.checkbox_STATS_3.configure(text="Add Active Master Servers")
+        #self.checkbox_STATS_3.select()
 
-        self.checkbox_STATS_4 = customtkinter.CTkCheckBox(master=self.tabview.tab("Stats"))
-        self.checkbox_STATS_4.grid(row=3, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_STATS_4.configure(text="Add New Server Browser")
-        self.checkbox_STATS_4.select()
+        #self.checkbox_STATS_4 = customtkinter.CTkCheckBox(master=self.tabview.tab("Stats"))
+        #self.checkbox_STATS_4.grid(row=3, column=0, pady=(20, 0), padx=20, sticky="nw")
+        #self.checkbox_STATS_4.configure(text="Add New Server Browser")
+        #self.checkbox_STATS_4.select()
 
         # FMM Checkbox
         self.checkbox_FMM_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("FMM"))
@@ -331,14 +346,14 @@ class App(customtkinter.CTk):
         self.checkbox_FMM_1.select()
 
         # Crash Fixes Checkbox
-        self.checkbox_Cfix_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Crash Fixes"))
-        self.checkbox_Cfix_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_Cfix_1.configure(text="Patch d3d9")
-        self.checkbox_Cfix_1.select()
+        #self.checkbox_Cfix_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Crash Fixes"))
+        #self.checkbox_Cfix_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
+        #self.checkbox_Cfix_1.configure(text="Patch d3d9")
+        #self.checkbox_Cfix_1.select()
 
         self.checkbox_Cfix_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("Crash Fixes"))
         self.checkbox_Cfix_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_Cfix_2.configure(text="Patch bink32")
+        self.checkbox_Cfix_2.configure(text="Update binkw32.dll")
         self.checkbox_Cfix_2.select()
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
@@ -357,6 +372,7 @@ class App(customtkinter.CTk):
         except Exception as e:
             self.log("Could not find config assets/config.json", self.textbox)
             self.log(e, self.textbox)
+            app.update()
 
 
 
@@ -376,6 +392,7 @@ class App(customtkinter.CTk):
 
         if version.parse(githubReleases[0]["tag_name"]) > version.parse(qolConfig["config"]["version"]):
             self.log(f"New Version Found!", self.textbox)
+            app.update()
 
             try:
                 self.log(f"Downloading {githubReleases[0]['zipball_url']}", self.textbox)
@@ -399,6 +416,7 @@ class App(customtkinter.CTk):
         
         else:
             self.log(f"No Updates Found", self.textbox)
+            app.update()
             return
     
 
@@ -408,11 +426,11 @@ class App(customtkinter.CTk):
         qolConfig = self.get_config()
 
         self.log("!!! Backup your ElDewrito folder before updating !!!", self.textbox)
+        app.update()
 
         #if qolConfig["config"]["checkForUpdates"]:
         #    self.log("Checking for updates...", self.textbox)
         #    self.self_update()
-
 
 
 
@@ -423,6 +441,7 @@ class App(customtkinter.CTk):
 
         if ed_path.is_file():
             self.log("Eldorado Found!", self.textbox)
+            app.update()
 
             #Get GPU and Vulkan support information
             gpu_support = check_gpu_support()
@@ -439,83 +458,100 @@ class App(customtkinter.CTk):
             
             else:
                 self.log("Vulkan Version: " + str(vulkan_Data), self.textbox)
+                app.update()
  
             if version.parse(vulkan_Data) > version.parse("1.3.0"):
                 self.log("Vulkan Standard Supported!", self.textbox)
+                app.update()
+
                 if self.checkbox_DXVK_1.get():
                     if copy_vulkans(file_path):
                         self.log("Patched for Vulkan Standard ✔️", self.textbox)
+                        app.update()
 
                     else:
                         self.log("Failed to copy files for Vulkan", self.textbox)
+                        app.update()
 
             elif version.parse(vulkan_Data) > version.parse("1.1.0"):
                 self.log("Vulkan Async Supported!")
                 if self.checkbox_DXVK_1.get():
                     if copy_vulkana(file_path):
                         self.log("Patched for Vulkan Async ✔️", self.textbox)
+                        app.update()
+
                     else:
                         self.log("Failed to copy files for Vulkan", self.textbox)
+                        app.update()
 
             else:
                 self.log("Your machine does not support Vulkan", self.textbox)
-
-
-            #Patch new browser
-            if self.checkbox_STATS_4.get():
-                if update_dewcfg(file_path):
-                    self.log("Browser patched to http://ed6browser.thebeerkeg.net/ ✔️", self.textbox)
-                
-                else:
-                    self.log("Failed to configure new browser.", self.textbox)
-
-
-            #Patch master servers
-            if self.checkbox_STATS_3.get():
-                if update_rems(file_path):
-                    self.log("Added active masters. ✔️", self.textbox)
-                else:
-                    self.log("Failed to add new masters to dewrito.json", self.textbox)
+                app.update()
 
             
             #Add new stats reporting
             if self.checkbox_STATS_1.get():
-                if update_stats(file_path):
-                    self.log("Added stats.zgaf.io ✔️", self.textbox)
+                if update_stats(file_path) and update_dewcfg(file_path):
+                    self.log("Added dewrito.json ✔️", self.textbox)
+                    self.log("Browser patched to http://ed6browser.thebeerkeg.net/ ✔️", self.textbox)
+                    app.update()
+
                 else:
                     self.log("Failed to add stats.zgaf.io to dewrito.json", self.textbox)
-
-
-            #Copy d3d9
-            if self.checkbox_Cfix_1.get():
-                if copy_d3d9(file_path):
-                    self.log("Updated d3d9.dll ✔️", self.textbox)
-                else:
-                    self.log("Failed to update d3d9.dll", self.textbox)
+                    app.update()
 
 
             #Copy bink32
             if self.checkbox_Cfix_2.get():
                 if copy_binkw32(file_path):
                     self.log("Updated binkw32.dll ✔️", self.textbox)
+                    app.update()
+
                 else:
                     self.log("Failed to update binkw32.dll", self.textbox)
+                    app.update()
 
 
             #Copy chat fixes
             if self.checkbox_CEF_1.get():
                 if copy_chat(file_path):
                     self.log("Added chat filter and lag fix ✔️", self.textbox)
+                    app.update()
+
                 else:
                     self.log("Failed to copy chat fixes.", self.textbox)
+                    app.update()
+
 
             #Update FMM
             if self.checkbox_FMM_1.get():
                 if copy_fmm(file_path):
                     self.log("Updated FMM ✔️", self.textbox)
+                    app.update()
+
                 else:
                     self.log("Failed to update FMM", self.textbox)
+                    app.update()
 
+            #Copy shader tools then generate shader cache
+            if self.checkbox_DXVK_2.get():
+                if copy_Update(file_path):
+                    self.log("Copied shader tools to /maps/update ✔️", self.textbox)
+                    app.update()
+
+                    self.log("Starting shader gen, go grab a coffee...", self.textbox)
+                    app.update()
+
+                    if gen_ShaderCache(file_path):
+                        self.log("Shader generation complete! Your game will lag on first start ✔️", self.textbox)
+                        app.update()
+
+                    else:
+                        self.log("Shader generation failed, please restore cache from backup.", self.textbox)
+                        app.update()
+
+                else:
+                    self.log("Failed to generate shader cache.", self.textbox)
 
 
         elif not file_path:
@@ -535,6 +571,11 @@ class App(customtkinter.CTk):
 
     def open_fileshare(self):
         webbrowser.open("https://fileshare.zgaf.io", new=1)
+
+
+
+    def open_guide(self):
+        webbrowser.open("https://bit.ly/eldewritoguide", new=1)
 
 
 
@@ -585,7 +626,7 @@ if __name__ == "__main__":
     app.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","icon.png"))
     app.wm_iconbitmap()
     app.iconphoto(False, app.iconpath)
-    pyi_splash.close()
+    #pyi_splash.close()
     app.after_idle(app.startup_Tasks)
     app.mainloop()
 
