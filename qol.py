@@ -15,6 +15,7 @@ from tkinter import filedialog
 from pathlib import Path
 from PIL import ImageTk
 from packaging import version
+from win32api import GetFileVersionInfo, LOWORD, HIWORD
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -70,9 +71,41 @@ def gen_ShaderCache(fpath):
         shaderGen.wait()
 
     except Exception as e:
-        return False
+        return False, e
 
-    return True
+    return True, "Shader gen success!"
+
+
+#Check for dewrito_prefs and set game.firstrun
+def pre_tasks(fpath):
+    try:
+        if os.path.exists(fpath + "/dewrito_prefs.cfg"):
+            with open(fpath + "/dewrito_prefs.cfg", "r") as dewprefs:
+                data = dewprefs.readlines()
+
+                for i in range(len(data)):
+                    if 'Game.FirstRun "1"' in data[i]:
+                        return True, "Already patched first run."
+    
+                    elif 'Game.FirstRun "0"' in data[i]:
+                        data[i] = 'Game.FirstRun "1"\n'
+                        break
+
+            with open(fpath + "/dewrito_prefs.cfg", "w") as dewprefs:
+                dewprefs.writelines(data)
+
+            return True, "Set Game.FirstRun 1"
+
+        else:
+            try:
+                shutil.copyfile("assets/dewrito_prefs.cfg", fpath + "/dewrito_prefs.cfg")
+                return True, "No dewrito_prefs.cfg detected, supplying template."
+
+            except Exception as e:
+                return False, e
+
+    except Exception as e:
+        return False, e
 
 
 #Get vulkan version on local machine
@@ -102,55 +135,54 @@ def get_vulkan_version():
     return vulkan_data
 
 
-
 #Update server browser in dewrito_prefs.cfg
 def update_dewcfg(fpath):
     with open(fpath + "/dewrito_prefs.cfg", "r") as dewprefs:
         data = dewprefs.readlines()
 
         for i in range(len(data)):
-            if data[i].startswith("Game.MenuURL"):
+            if "Game.MenuURL" in data[i]:
                 data[i] = 'Game.MenuURL "http://ed6browser.thebeerkeg.net/" \n'
-                break
+                
+                with open(fpath + "/dewrito_prefs.cfg", "w") as dewprefs:
+                    dewprefs.writelines(data)
 
-            else:
-                print("Missing Game.MenuURL, please verify your dewrito_prefs.cfg is not corrupt.")
-                return False
+                    return True, "Updated server browser!"
     
-    with open(fpath + "/dewrito_prefs.cfg", "w") as dewprefs:
-        dewprefs.writelines(data)
-
-    return True
+        return False, "Failed to update server browser."
 
 
-
+#Update REMS
 def update_rems(fpath):
-    with open(fpath + "/mods/dewrito.json", "r") as remdata:
-        data = json.load(remdata)
+    try:
+        with open(fpath + "/mods/dewrito.json", "r") as remdata:
+            data = json.load(remdata)
 
-        servers = [{  
-                    "list":"http://ed.thebeerkeg.net/server/list",
-                    "announce":"http://ed.thebeerkeg.net/server/announce",
-                    "stats":"http://ed.thebeerkeg.net/server/stats"
-                    },
-                    {  
-                    "list":"http://master.zgaf.io/list",
-                    "announce":"http://master.zgaf.io/announce",
-                    "stats":"http://master.zgaf.io/stats"
-                    },
-                    {  
-                    "list": "http://eldewrito.red-m.net/list",
-                    "announce": "http://eldewrito.red-m.net/announce",
-                    "stats": "http://eldewrito.red-m.net/stats"
-                    }]
+            servers = [{  
+                        "list":"http://ed.thebeerkeg.net/server/list",
+                        "announce":"http://ed.thebeerkeg.net/server/announce",
+                        "stats":"http://ed.thebeerkeg.net/server/stats"
+                        },
+                        {  
+                        "list":"http://master.zgaf.io/list",
+                        "announce":"http://master.zgaf.io/announce",
+                        "stats":"http://master.zgaf.io/stats"
+                        },
+                        {  
+                        "list": "http://eldewrito.red-m.net/list",
+                        "announce": "http://eldewrito.red-m.net/announce",
+                        "stats": "http://eldewrito.red-m.net/stats"
+                        }]
         
-    data["masterServers"] = servers
+        data["masterServers"] = servers
 
-    with open(fpath + "/mods/dewrito.json", "w") as remdata:
-        json.dump(data, remdata, ensure_ascii=True)
+        with open(fpath + "/mods/dewrito.json", "w") as remdata:
+            json.dump(data, remdata, ensure_ascii=True)
 
-    return True
+    except Exception as e:
+        return False, e
 
+    return True, "Updated REMS!"
 
 
 def update_stats(fpath):
@@ -159,23 +191,19 @@ def update_stats(fpath):
             os.remove(fpath + "/mods/dewrito.json")
 
         shutil.copyfile("assets/dewrito.json", fpath + "/mods/dewrito.json")
-        return True
+        return True, "Updated dewrito.json!"
     
     except Exception as e:
-        print(e)
-        return False
+        return False, e
     
-
 
 def copy_binkw32(fpath):
     try:
         shutil.copyfile("assets/binkw32.dll", fpath + "/bink32.dll")
-        return True
+        return True, "Updated binkw32.dll"
     
     except Exception as e:
-        print(e)
-        return False
-
+        return False, e
 
 
 def copy_chat(fpath):
@@ -184,50 +212,73 @@ def copy_chat(fpath):
         shutil.copyfile("assets/mods/ui/web/screens/chat/chat.js", fpath + "/mods/ui/web/screens/chat/chat.js")
         shutil.copyfile("assets/mods/ui/web/screens/chat/chat.css", fpath + "/mods/ui/web/screens/chat/chat.css")
         shutil.copyfile("assets/mods/ui/web/screens/chat/index.html", fpath + "/mods/ui/web/screens/chat/index.html")
+        shutil.copyfile("assets/mods/ui/web/screens/title/title.js", fpath + "/mods/ui/web/screens/title/title.js")
 
-        return True
+        return True, "Patched annoucenment, scoreboard, and chat.js"
     
     except Exception as e:
-        print(e)
-        return False
-
+        return False, e
 
 
 def copy_fmm(fpath):
     try:
-        shutil.copyfile("assets/fmm.exe", fpath + "/fmm.exe")
-        return True
+        if not os.path.exists(fpath + "/FMM.exe"):
+            fmm_new = GetFileVersionInfo("assets/FMM.exe", "\\")
+            fmmNewMS = fmm_new["FileVersionMS"]
+            fmmNewLS = fmm_new["FileVersionLS"]
+            fmmNewVersion = str(HIWORD(fmmNewMS)) + "." + str(LOWORD(fmmNewMS)) + "." + str(HIWORD(fmmNewLS)) + "." + str(LOWORD(fmmNewLS))
+
+            shutil.copyfile("assets/FMM.exe", fpath + "/FMM.exe")
+            return True, "Installed FMM " + fmmNewVersion + " ✔️"
     
+        else:
+            fmm_new = GetFileVersionInfo("assets/FMM.exe", "\\")
+            fmm_old = GetFileVersionInfo(fpath + "/FMM.exe", "\\")
+
+            fmmNewMS = fmm_new["FileVersionMS"]
+            fmmNewLS = fmm_new["FileVersionLS"]
+
+            fmmOldMS = fmm_old["FileVersionMS"]
+            fmmOldLS = fmm_old["FileVersionLS"]
+
+            fmmNewVersion = str(HIWORD(fmmNewMS)) + "." + str(LOWORD(fmmNewMS)) + "." + str(HIWORD(fmmNewLS)) + "." + str(LOWORD(fmmNewLS))
+            fmmOldVersion = str(HIWORD(fmmOldLS)) + "." + str(LOWORD(fmmOldLS)) + "." + str(HIWORD(fmmOldLS)) + "." + str(LOWORD(fmmOldLS))
+
+            if version.parse(fmmNewVersion) > version.parse(fmmOldVersion):
+                os.remove(fpath + "/FMM.exe")
+                shutil.copyfile("assets/FMM.exe", fpath + "/FMM.exe")
+                
+                return True, "Updated FMM to " + fmmNewVersion + " ✔️"
+                
+            else:
+                return True, "FMM " + fmmOldVersion + " already up to date ✔️"
+
     except Exception as e:
-        print(e)
-        return False
+        return False, e
 
 
 def copy_Update(fpath):
     try:
         if not os.path.isdir(fpath + "/maps/update"):
             shutil.copytree("assets/update", fpath + "/maps/update")
-            return True
+            return True, "Copied shader updater"
         
         else:
-            return True
+            return True, "Shader tools found!"
     
     except Exception as e:
-        print(e)
-        return False
+        return False, e
 
 
 def copy_vulkans(fpath):
     try:
         shutil.copyfile("assets/DXVKs/d3d9.dll", fpath + "/d3d9.dll")
         shutil.copyfile("assets/DXVKs/dxvk.conf", fpath + "/dxvk.conf")
-        shutil.copyfile("assets/DXVKs/eldorado.dxvk-cache", fpath + "/eldorado.dxvk-cache")
 
-        return True
+        return True, "Copied DXVK"
     
     except Exception as e:
-        print(e)
-        return False
+        return False, e
 
 
 
@@ -235,13 +286,11 @@ def copy_vulkana(fpath):
     try:
         shutil.copyfile("assets/DXVKa/d3d9.dll", fpath + "/d3d9.dll")
         shutil.copyfile("assets/DXVKa/dxvk.conf", fpath + "/dxvk.conf")
-        shutil.copyfile("assets/DXVKa/eldorado.dxvk-cache", fpath + "/eldorado.dxvk-cache")
 
-        return True
+        return True, "Copied DXVK"
     
     except Exception as e:
-        print(e)
-        return False
+        return False, e
 
 
 class App(customtkinter.CTk):
@@ -249,7 +298,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         #Configure Window
-        self.title("QOL Updater")
+        self.title("QOL Updater v0.1.1")
         self.geometry(f"{800}x{450}")
 
         #Configure grid
@@ -316,9 +365,9 @@ class App(customtkinter.CTk):
         self.checkbox_DXVK_1.configure(text="DXVK (If Supported)")
         self.checkbox_DXVK_1.select()
 
-        self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
-        self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_DXVK_2.configure(text="Generate Shaders (Temporarily CPU Intensive!)")
+        #self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
+        #self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
+        #self.checkbox_DXVK_2.configure(text="Generate Shaders (Temporarily CPU Intensive!)")
         #self.checkbox_DXVK_2.select()
 
         # CEF Checkbox
@@ -376,7 +425,7 @@ class App(customtkinter.CTk):
         except Exception as e:
             self.log("Could not find config assets/config.json", self.textbox)
             self.log(e, self.textbox)
-            app.update()
+
 
 
 
@@ -396,7 +445,7 @@ class App(customtkinter.CTk):
 
         if version.parse(githubReleases[0]["tag_name"]) > version.parse(qolConfig["config"]["version"]):
             self.log(f"New Version Found!", self.textbox)
-            app.update()
+
 
             try:
                 self.log(f"Downloading {githubReleases[0]['zipball_url']}", self.textbox)
@@ -420,7 +469,7 @@ class App(customtkinter.CTk):
         
         else:
             self.log(f"No Updates Found", self.textbox)
-            app.update()
+
             return
     
 
@@ -430,7 +479,7 @@ class App(customtkinter.CTk):
         qolConfig = self.get_config()
 
         self.log("!!! Backup your ElDewrito folder before updating !!!", self.textbox)
-        app.update()
+
 
         #if qolConfig["config"]["checkForUpdates"]:
         #    self.log("Checking for updates...", self.textbox)
@@ -445,7 +494,16 @@ class App(customtkinter.CTk):
 
         if ed_path.is_file():
             self.log("Eldorado Found!", self.textbox)
-            app.update()
+
+            #Check for dewrito_prefs
+            status, msg = pre_tasks(file_path)
+
+            if status:
+                self.log('Set game.firstrun "1"', self.textbox)
+
+            else:
+                self.log("Failed to find copy dewrito_prefs or access existing dewrito_prefs.", self.textbox)
+                self.log(msg, self.textbox)
 
             #Get GPU and Vulkan support information
             gpu_support = check_gpu_support()
@@ -462,110 +520,142 @@ class App(customtkinter.CTk):
             
             else:
                 self.log("Vulkan Version: " + str(vulkan_Data), self.textbox)
-                app.update()
+
  
             if version.parse(vulkan_Data) > version.parse("1.3.0"):
                 self.log("Vulkan Standard Supported!", self.textbox)
-                app.update()
+
 
                 if self.checkbox_DXVK_1.get():
-                    if copy_vulkans(file_path):
+                    status, msg = copy_vulkans(file_path)
+                    if status:
                         self.log("Patched for Vulkan Standard ✔️", self.textbox)
-                        app.update()
+
 
                     else:
                         self.log("Failed to copy files for Vulkan", self.textbox)
-                        app.update()
+                        self.log(msg, self.textbox)
+  
 
             elif version.parse(vulkan_Data) > version.parse("1.1.0"):
                 self.log("Vulkan Async Supported!")
+
+
                 if self.checkbox_DXVK_1.get():
-                    if copy_vulkana(file_path):
+                    status, msg = copy_vulkana(file_path)
+                    if status:
                         self.log("Patched for Vulkan Async ✔️", self.textbox)
-                        app.update()
+
 
                     else:
                         self.log("Failed to copy files for Vulkan", self.textbox)
-                        app.update()
+                        self.log(msg, self.textbox)
+
 
             else:
                 self.log("Your machine does not support Vulkan", self.textbox)
-                app.update()
 
-            
-            #Add new stats reporting
+            #Add new stats and browser
             if self.checkbox_STATS_1.get():
-                if update_stats(file_path) and update_dewcfg(file_path):
-                    self.log("Added dewrito.json ✔️", self.textbox)
-                    self.log("Browser patched to http://ed6browser.thebeerkeg.net/ ✔️", self.textbox)
-                    app.update()
+                status, msg = update_stats(file_path)
+                #status2, msg2 = update_rems(file_path)
+
+                if status:
+                    self.log("Updated dewrito.json ✔️", self.textbox)
 
                 else:
-                    self.log("Failed to add stats.zgaf.io to dewrito.json", self.textbox)
-                    app.update()
+                    self.log("Failed to copy new dewrito.json", self.textbox)
+                    self.log(msg)
+                
+                #Update server browser
+                status, msg = update_dewcfg(file_path)
+                if status:
+                    self.log("Browser patched to http://ed6browser.thebeerkeg.net/ ✔️", self.textbox)
+            
+                else:
+                    self.log("Failed to update server browser!", self.textbox)
+                    self.log(msg)
 
 
             #Copy bink32
             if self.checkbox_Cfix_2.get():
-                if copy_binkw32(file_path):
+                status, msg = copy_binkw32(file_path)
+
+                if status:
                     self.log("Updated binkw32.dll ✔️", self.textbox)
-                    app.update()
+
 
                 else:
                     self.log("Failed to update binkw32.dll", self.textbox)
-                    app.update()
+                    self.log(msg, self.textbox)
+
 
 
             #Copy chat fixes
             if self.checkbox_CEF_1.get():
-                if copy_chat(file_path):
+                status, msg = copy_chat(file_path)
+
+                if status:
                     self.log("Added chat filter and lag fix ✔️", self.textbox)
-                    app.update()
+
 
                 else:
                     self.log("Failed to copy chat fixes.", self.textbox)
-                    app.update()
+                    self.log(msg, self.textbox)
+
 
 
             #Update FMM
             if self.checkbox_FMM_1.get():
-                if copy_fmm(file_path):
-                    self.log("Updated FMM ✔️", self.textbox)
-                    app.update()
+                status, msg = copy_fmm(file_path)
+
+                if status:
+                    self.log(msg, self.textbox)
+
 
                 else:
                     self.log("Failed to update FMM", self.textbox)
-                    app.update()
+                    self.log(msg, self.textbox)
+
 
             #Copy shader tools then generate shader cache
-            if self.checkbox_DXVK_2.get():
-                if copy_Update(file_path):
+                    
+            '''if self.checkbox_DXVK_2.get():
+                status, msg = copy_Update(file_path)
+
+                if status:
                     self.log("Copied shader tools to /maps/update ✔️", self.textbox)
-                    app.update()
+
 
                     self.log("Starting shader gen, go grab a coffee...", self.textbox)
                     self.log("!!! DO NOT CLOSE THE UPDATER !!!", self.textbox)
                     self.log("!!! DO NOT CLOSE THE UPDATER !!!", self.textbox)
                     self.log("!!! DO NOT CLOSE THE UPDATER !!!", self.textbox)
-                    app.update()
+                    
 
-                    if gen_ShaderCache(file_path):
+                    status2, msg2 = gen_ShaderCache(file_path)
+
+                    if status2:
                         self.log("Shader generation complete! Your game will lag on first start ✔️", self.textbox)
-                        app.update()
+                        
 
                     else:
                         self.log("Shader generation failed, please restore cache from backup.", self.textbox)
-                        app.update()
+                        self.log(msg2, self.textbox)
+
 
                 else:
                     self.log("Failed to copy shader files.", self.textbox)
+                    self.log(msg, self.textbox)'''
 
+            self.log("Done!", self.textbox)
 
         elif not file_path:
             pass
 
         else:
             self.log("Invalid Game Directory", self.textbox)
+
 
         return
 
@@ -625,9 +715,9 @@ class App(customtkinter.CTk):
         current_time = time.strftime("%H:%M:%S", t)
         textbox.insert(customtkinter.END, f"[{current_time}] - {message}\n")
         self.textbox.see(customtkinter.END)
+        app.update()
 
         
-
 if __name__ == "__main__":
     app = App()
     app.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","icon.png"))
@@ -636,5 +726,3 @@ if __name__ == "__main__":
     #pyi_splash.close()
     app.after_idle(app.startup_Tasks)
     app.mainloop()
-
-    
