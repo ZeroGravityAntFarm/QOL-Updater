@@ -4,7 +4,7 @@ import GPUtil
 import json
 import subprocess
 import time
-#import pyi_splash
+import pyi_splash
 import webbrowser
 import hashlib
 import shutil
@@ -60,7 +60,6 @@ def sha1_check(file_path):
 
 #Generate shader cache
 def gen_ShaderCache(fpath):
-
     try:
         shaderGen = subprocess.Popen([fpath + "/maps/update/UPDATE.bat"], cwd=fpath + '/maps/update/' ,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
         stdout, stderr = shaderGen.communicate()
@@ -73,7 +72,24 @@ def gen_ShaderCache(fpath):
     except Exception as e:
         return False, e
 
-    return True, "Shader gen success!"
+    return True, "Shader Gen Success!"
+
+
+#Revert shader cache tag changes
+def revert_ShaderCache(fpath):
+    try:
+        shaderGenReset = subprocess.Popen([fpath + "/maps/update/RESET.bat"], cwd=fpath + '/maps/update/' ,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        stdout, stderr = shaderGenReset.communicate()
+
+        if stderr:
+            print(stderr)
+        
+        shaderGenReset.wait()
+
+    except Exception as e:
+        return False, e
+
+    return True, "Shader Reset Finished!"
 
 
 #Check for dewrito_prefs and set game.firstrun
@@ -298,7 +314,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         #Configure Window
-        self.title("QOL Updater v0.1.1")
+        self.title("QOL Updater v0.1.2")
         self.geometry(f"{800}x{450}")
 
         #Configure grid
@@ -317,8 +333,8 @@ class App(customtkinter.CTk):
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_ed_directory)
         self.sidebar_button_1.grid(row=0, column=0, padx=20, pady=10)
 
-        #self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.verify_files)
-        #self.sidebar_button_2.grid(row=1, column=0, padx=20, pady=10)
+        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.reset_shaders)
+        self.sidebar_button_2.grid(row=1, column=0, padx=20, pady=10)
 
         self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_guide)
         self.sidebar_button_3.grid(row=5, column=0, padx=20, pady=10)
@@ -331,7 +347,7 @@ class App(customtkinter.CTk):
 
         #Configure Sidbar Buttons
         self.sidebar_button_1.configure(text="Apply Updates")
-        #self.sidebar_button_2.configure(text="Verify Files")
+        self.sidebar_button_2.configure(text="Revert Shader Cache")
         self.sidebar_button_3.configure(text="ElDewrito Guide")
         self.sidebar_button_4.configure(text="Fileshare")
         self.sidebar_button_5.configure(text="Discord")
@@ -365,9 +381,9 @@ class App(customtkinter.CTk):
         self.checkbox_DXVK_1.configure(text="DXVK (If Supported)")
         self.checkbox_DXVK_1.select()
 
-        #self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
-        #self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
-        #self.checkbox_DXVK_2.configure(text="Generate Shaders (Temporarily CPU Intensive!)")
+        self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
+        self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
+        self.checkbox_DXVK_2.configure(text="Generate Shader Cache (Temporarily CPU Itensive But Will Result In Better Performance)")
         #self.checkbox_DXVK_2.select()
 
         # CEF Checkbox
@@ -486,6 +502,26 @@ class App(customtkinter.CTk):
         #    self.self_update()
 
 
+    def reset_shaders(self):
+        self.log("Select ED Folder", self.textbox)
+        file_path = filedialog.askdirectory()
+        ed_path = Path(file_path + "/eldorado.exe")
+
+        if ed_path.is_file():
+            self.log("Eldorado Found!", self.textbox)
+
+            status, msg = revert_ShaderCache(file_path)
+
+            if status:
+                self.log(msg, self.textbox)
+
+            else:
+                self.log("Shader Reset Failed!")
+                self.log(msg, self.textbox)
+
+        else:
+            self.log("Invalid Game Directory", self.textbox)
+
 
     #Grab and validate game directory
     def open_ed_directory(self):
@@ -499,7 +535,7 @@ class App(customtkinter.CTk):
             status, msg = pre_tasks(file_path)
 
             if status:
-                self.log('Set game.firstrun "1"', self.textbox)
+                self.log('Set Game.FirstRun "1"', self.textbox)
 
             else:
                 self.log("Failed to find copy dewrito_prefs or access existing dewrito_prefs.", self.textbox)
@@ -619,8 +655,7 @@ class App(customtkinter.CTk):
 
 
             #Copy shader tools then generate shader cache
-                    
-            '''if self.checkbox_DXVK_2.get():
+            if self.checkbox_DXVK_2.get():
                 status, msg = copy_Update(file_path)
 
                 if status:
@@ -646,7 +681,7 @@ class App(customtkinter.CTk):
 
                 else:
                     self.log("Failed to copy shader files.", self.textbox)
-                    self.log(msg, self.textbox)'''
+                    self.log(msg, self.textbox)
 
             self.log("Done!", self.textbox)
 
@@ -723,6 +758,6 @@ if __name__ == "__main__":
     app.iconpath = ImageTk.PhotoImage(file=os.path.join("assets","icon.png"))
     app.wm_iconbitmap()
     app.iconphoto(False, app.iconpath)
-    #pyi_splash.close()
+    pyi_splash.close()
     app.after_idle(app.startup_Tasks)
     app.mainloop()
