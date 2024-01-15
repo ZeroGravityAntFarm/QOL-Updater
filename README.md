@@ -1,6 +1,6 @@
 # QOL-Updater
 Small wizard to help advise and apply QOL patches for ElDewrito.
-
+https://github.com/duckfudge/ElDewrito-QOL-Patch
 ![dewupdater](/assets/updater.PNG)
 
 ### Build:
