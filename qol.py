@@ -89,7 +89,7 @@ def revert_ShaderCache(fpath):
     except Exception as e:
         return False, e
 
-    return True, "Shader Reset Finished!"
+    return True, "Disable Shader Finished!"
 
 
 #Check for dewrito_prefs and set game.firstrun
@@ -168,44 +168,6 @@ def update_dewcfg(fpath):
         return False, "Failed to update server browser."
 
 
-#Update REMS
-def update_rems(fpath):
-    try:
-        with open(fpath + "/mods/dewrito.json", "r") as remdata:
-            data = json.load(remdata)
-
-            servers = [{  
-                        "list":"http://ed.thebeerkeg.net/server/list",
-                        "announce":"http://ed.thebeerkeg.net/server/announce",
-                        "stats":"http://ed.thebeerkeg.net/server/stats"
-                        },
-                        {  
-                        "list":"http://master.zgaf.io/list",
-                        "announce":"http://master.zgaf.io/announce",
-                        "stats":"http://master.zgaf.io/stats"
-                        },
-                        {  
-                        "list":"http://icebox.mx.mt/list",
-                        "announce":"http://icebox.mx.mt/announce",
-                        "stats":"http://icebox.mx.mt/stats"
-                        },
-                        {  
-                        "list": "http://eldewrito.red-m.net/list",
-                        "announce": "http://eldewrito.red-m.net/announce",
-                        "stats": "http://eldewrito.red-m.net/stats"
-                        }]
-        
-        data["masterServers"] = servers
-
-        with open(fpath + "/mods/dewrito.json", "w") as remdata:
-            json.dump(data, remdata, ensure_ascii=True)
-
-    except Exception as e:
-        return False, e
-
-    return True, "Updated REMS!"
-
-
 def update_stats(fpath):
     try:
         if os.path.exists(fpath + "/mods/dewrito.json"):
@@ -281,7 +243,7 @@ def copy_fmm(fpath):
 def copy_Update(fpath):
     try:
         if not os.path.isdir(fpath + "/maps/update"):
-            shutil.copytree("assets/update", fpath + "/maps/update")
+            shutil.copytree("assets/maps/update", fpath + "/maps/update")
             return True, "Copied shader updater"
         
         else:
@@ -295,6 +257,7 @@ def copy_vulkans(fpath):
     try:
         shutil.copyfile("assets/DXVKs/d3d9.dll", fpath + "/d3d9.dll")
         shutil.copyfile("assets/DXVKs/dxvk.conf", fpath + "/dxvk.conf")
+        shutil.copyfile("assets/DXVKs/eldorado.dxvk-cache", fpath + "/eldorado.dxvk-cache")
 
         return True, "Copied DXVK"
     
@@ -307,6 +270,7 @@ def copy_vulkana(fpath):
     try:
         shutil.copyfile("assets/DXVKa/d3d9.dll", fpath + "/d3d9.dll")
         shutil.copyfile("assets/DXVKa/dxvk.conf", fpath + "/dxvk.conf")
+        shutil.copyfile("assets/DXVKa/eldorado.dxvk-cache", fpath + "/eldorado.dxvk-cache")
 
         return True, "Copied DXVK"
     
@@ -319,7 +283,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         #Configure Window
-        self.title("QOL Updater v0.1.2")
+        self.title("QOL Updater v0.1.3")
         self.geometry(f"{800}x{450}")
 
         #Configure grid
@@ -352,7 +316,7 @@ class App(customtkinter.CTk):
 
         #Configure Sidbar Buttons
         self.sidebar_button_1.configure(text="Apply Updates")
-        self.sidebar_button_2.configure(text="Revert Shader Cache")
+        self.sidebar_button_2.configure(text="Disable Shader Cache")
         self.sidebar_button_3.configure(text="ElDewrito Guide")
         self.sidebar_button_4.configure(text="Fileshare")
         self.sidebar_button_5.configure(text="Discord")
@@ -388,19 +352,19 @@ class App(customtkinter.CTk):
 
         self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
         self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_DXVK_2.configure(text="Generate Shader Cache (Temporarily CPU Itensive But Will Result In Better Performance)")
+        self.checkbox_DXVK_2.configure(text="Build Shader Cache [EXPERIMENTAL] (Temporarily CPU intensive but will result in better performance)")
         #self.checkbox_DXVK_2.select()
 
         # CEF Checkbox
         self.checkbox_CEF_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Game Chat"))
         self.checkbox_CEF_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="n")
-        self.checkbox_CEF_1.configure(text="Chat Filter And Fix Chat Lag")
+        self.checkbox_CEF_1.configure(text="Chat filter and fix chat lag")
         self.checkbox_CEF_1.select()
 
         # Stats Checkbox
         self.checkbox_STATS_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("dewrito.json"))
         self.checkbox_STATS_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_STATS_1.configure(text="Update 'dewrito.json' And Add Server Browser")
+        self.checkbox_STATS_1.configure(text="Update 'dewrito.json' and add server browser")
         self.checkbox_STATS_1.select()
 
         #self.checkbox_STATS_3 = customtkinter.CTkCheckBox(master=self.tabview.tab("Stats"))
@@ -521,7 +485,7 @@ class App(customtkinter.CTk):
                 self.log(msg, self.textbox)
 
             else:
-                self.log("Shader Reset Failed!")
+                self.log("Disable shader failed!")
                 self.log(msg, self.textbox)
 
         else:
@@ -599,7 +563,6 @@ class App(customtkinter.CTk):
             #Add new stats and browser
             if self.checkbox_STATS_1.get():
                 status, msg = update_stats(file_path)
-                #status2, msg2 = update_rems(file_path)
 
                 if status:
                     self.log("Updated dewrito.json ✔️", self.textbox)
