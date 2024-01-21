@@ -34,6 +34,7 @@
    "stats":{
       "submitUrls":[
          "http://ed.thebeerkeg.net/server/submit",
+         "http://icebox.mx.mt/submit",
          "http://thebeerkeg.net/submit.php",
          "http://stat-endpoint.zgaf.io/api_v1/stats" 
         
