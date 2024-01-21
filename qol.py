@@ -185,6 +185,11 @@ def update_rems(fpath):
                         "stats":"http://master.zgaf.io/stats"
                         },
                         {  
+                        "list":"http://icebox.mx.mt/list",
+                        "announce":"http://icebox.mx.mt/announce",
+                        "stats":"http://icebox.mx.mt/stats"
+                        },
+                        {  
                         "list": "http://eldewrito.red-m.net/list",
                         "announce": "http://eldewrito.red-m.net/announce",
                         "stats": "http://eldewrito.red-m.net/stats"
