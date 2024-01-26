@@ -283,7 +283,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         #Configure Window
-        self.title("QOL Updater v0.1.3")
+        self.title("QOL Updater v0.1.4")
         self.geometry(f"{800}x{450}")
 
         #Configure grid
@@ -302,8 +302,8 @@ class App(customtkinter.CTk):
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_ed_directory)
         self.sidebar_button_1.grid(row=0, column=0, padx=20, pady=10)
 
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.reset_shaders)
-        self.sidebar_button_2.grid(row=1, column=0, padx=20, pady=10)
+        #self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, command=self.reset_shaders)
+        #self.sidebar_button_2.grid(row=1, column=0, padx=20, pady=10)
 
         self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, command=self.open_guide)
         self.sidebar_button_3.grid(row=5, column=0, padx=20, pady=10)
@@ -316,7 +316,7 @@ class App(customtkinter.CTk):
 
         #Configure Sidbar Buttons
         self.sidebar_button_1.configure(text="Apply Updates")
-        self.sidebar_button_2.configure(text="Disable Shader Cache")
+        #self.sidebar_button_2.configure(text="Disable Shader Cache")
         self.sidebar_button_3.configure(text="ElDewrito Guide")
         self.sidebar_button_4.configure(text="Fileshare")
         self.sidebar_button_5.configure(text="Discord")
@@ -329,31 +329,40 @@ class App(customtkinter.CTk):
         self.textbox = customtkinter.CTkTextbox(self, width=250)
         self.textbox.grid(row=1, column=1, columnspan=2, rowspan=4, padx=(20, 20), pady=(5, 20), sticky="nsew")
 
-        self.tabview.add("DXVK")
         self.tabview.add("Game Chat")
         self.tabview.add("dewrito.json")
         self.tabview.add("FMM")
         self.tabview.add("Crash Fixes")
+        self.tabview.add("Experimental")
         self.tabview._segmented_button.grid(sticky="w")
 
         #Configure grid of individual tabs
-        self.tabview.tab("DXVK").grid_columnconfigure(4, weight=1)
         self.tabview.tab("Game Chat").grid_columnconfigure(4, weight=1)
         self.tabview.tab("dewrito.json").grid_columnconfigure(4, weight=1)
         self.tabview.tab("FMM").grid_columnconfigure(4, weight=1)
         self.tabview.tab("Crash Fixes").grid_columnconfigure(4, weight=1)
+        self.tabview.tab("Experimental").grid_columnconfigure(4, weight=1)
+
+
+        #Experimental Disclaimer
+        self.label = customtkinter.CTkLabel(master=self.tabview.tab("Experimental"), text="These features are experimental and could break your game!", fg_color="transparent")
+        self.label.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
 
 
         #DXVK Checkbox
-        self.checkbox_DXVK_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
-        self.checkbox_DXVK_1.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw")
+        self.checkbox_DXVK_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Experimental"))
+        self.checkbox_DXVK_1.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
         self.checkbox_DXVK_1.configure(text="DXVK (If Supported)")
-        self.checkbox_DXVK_1.select()
+        #self.checkbox_DXVK_1.select()
 
-        self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("DXVK"))
-        self.checkbox_DXVK_2.grid(row=1, column=0, pady=(20, 0), padx=20, sticky="nw")
-        self.checkbox_DXVK_2.configure(text="Build Shader Cache [EXPERIMENTAL] (Temporarily CPU intensive but will result in better performance)")
+        self.checkbox_DXVK_2 = customtkinter.CTkCheckBox(master=self.tabview.tab("Experimental"))
+        self.checkbox_DXVK_2.grid(row=2, column=0, pady=(20, 0), padx=20, sticky="nw")
+        self.checkbox_DXVK_2.configure(text="Build Shader Cache")
         #self.checkbox_DXVK_2.select()
+
+        self.sidebar_button_2 = customtkinter.CTkButton(master=self.tabview.tab("Experimental"), command=self.reset_shaders)
+        self.sidebar_button_2.grid(row=3, column=0, pady=(20, 0), padx=20, sticky="nw")
+        self.sidebar_button_2.configure(text="Disable Shader Cache")
 
         # CEF Checkbox
         self.checkbox_CEF_1 = customtkinter.CTkCheckBox(master=self.tabview.tab("Game Chat"))
